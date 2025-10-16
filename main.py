@@ -2,12 +2,15 @@
 Hopefully a single file server.
 """
 from contextlib import asynccontextmanager
+from os import environ
 
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 from pygit2 import Repository
+
+REPO_HOME = environ["HYPERHYPER_REPO_HOME"]
 
 @asynccontextmanager
 async def lifespan(app):
