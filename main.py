@@ -1,8 +1,9 @@
 """
 Hopefully a single file server.
 """
+import os
 from contextlib import asynccontextmanager
-from os import environ
+from pathlib import Path
 
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
@@ -10,7 +11,7 @@ from starlette.routing import Route
 
 from pygit2 import Repository
 
-REPO_HOME = environ["HYPERHYPER_REPO_HOME"]
+REPO_HOME = Path(os.environ.get("HYPERHYPER_REPO_HOME", "."))
 
 @asynccontextmanager
 async def lifespan(app):
@@ -28,11 +29,17 @@ def home(request):
     return PlainTextResponse('Hello, world!')
 
 def obj(request):
-    pass
+    """
+    Get object contents from repo
+    """
+    repo = Repository(REPO_HOME)
+    oid = request.path_params['object']
+    return PlainTextResponse(repo.get(oid).data)
+
 
 routes = [
     Route('/', home),
-    Route('/{repo}/{object}', obj)
+    Route('/{object}', obj)
 ]
 
 app = Starlette(debug=True, routes=routes, lifespan=lifespan)
