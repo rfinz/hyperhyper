@@ -2,6 +2,7 @@
 Hopefully a single file server.
 """
 import os
+import datetime
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -29,8 +30,8 @@ def home(request):
     """
     repo = Repository(REPO_HOME)
     res = ""
-    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
-        res += "{} | {} | {}\n".format(commit.commit_time, commit.id, commit.message.rstrip())
+    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME):
+        res += "{} | {} | {}\n".format(datetime.datetime.fromtimestamp(commit.commit_time), commit.id, commit.message.rstrip())
         pass
     return PlainTextResponse(res)
 
