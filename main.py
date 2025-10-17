@@ -43,12 +43,20 @@ def obj(request):
     """
     repo = Repository(REPO_HOME)
     oid = request.path_params['object']
-    return PlainTextResponse(repo.get(oid).data)
+    
+    start = request.path_params.get('start', 0)
+    end = request.path_params.get('end', -1)
+    
+    res = repo.get(oid).data
+    return PlainTextResponse(res[start:end])
 
 # RESERVED ROUTES: tree, object
 routes = [
     Route('/tree', tree),
     Route('/object/{object}', obj),
+    Route('/object/{object}/{start:int}/-', obj),
+    Route('/object/{object}/{start:int}/-/{end:int}', obj),
+    Route('/object/{object}/-/{end:int}', obj),
     Mount('/', app=StaticFiles(directory=SRV_HOME, html=True)),
 ]
 
