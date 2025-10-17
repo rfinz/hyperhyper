@@ -10,6 +10,7 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 from pygit2 import Repository
+from pygit2.enums import SortMode
 
 REPO_HOME = Path(os.environ.get("HYPERHYPER_REPO_HOME", "."))
 
@@ -26,7 +27,12 @@ def home(request):
     """
     Site index route.
     """
-    return PlainTextResponse('Hello, world!')
+    repo = Repository(REPO_HOME)
+    res = ""
+    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
+        res += "{} | {} | {}\n".format(commit.commit_time, commit.id, commit.message.rstrip())
+        pass
+    return PlainTextResponse(res)
 
 def obj(request):
     """
