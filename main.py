@@ -12,6 +12,7 @@ from starlette.staticfiles import StaticFiles
 
 from pygit2 import Repository
 from pygit2.enums import SortMode
+from pygit2.enums import ObjectType
 
 REPO_HOME = Path(os.environ.get("HYPERHYPER_REPO_HOME", "."))
 SRV_HOME = Path(os.environ.get("HYPERHYPER_SRV_HOME", REPO_HOME))
@@ -37,8 +38,12 @@ def directory(request):
             if e.id in prev:
                 pass
             else:
-                prev[e.id] = e.name
-                res += f"{e.id},{commit.commit_time},{e.name},{e.size - 1}\n"
+                if e.type == ObjectType.BLOB:
+                    prev[e.id] = e.name
+                    res += f"{e.id},{commit.commit_time},{e.name},{e.size - 1}\n"
+                elif e.type ==ObjectType.TREE:
+                    pass # TO DO: add recursion into directories
+                    
     return PlainTextResponse(res)
 
 def obj(request):
