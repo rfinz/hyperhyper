@@ -2,7 +2,6 @@
 Hopefully a single file server.
 """
 import os
-import datetime
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -26,21 +25,20 @@ async def lifespan(app):
     yield
     print('Shutdown')
 
-def tree(request):
+def directory(request):
     """
     Site tree
     """
     repo = Repository(REPO_HOME)
-    res = ""
+    res = "object,time,name,length\n"
     prev = {}
     for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
-        res += "{} | {} | {}\n".format(datetime.datetime.fromtimestamp(commit.commit_time), commit.id, commit.message.rstrip())
         for e in commit.tree:
             if e.id in prev:
                 pass
             else:
                 prev[e.id] = e.name
-                res += f"  {e.name} -> {e.id}\n"
+                res += f"{e.id},{commit.commit_time},{e.name},{e.size - 1}\n"
     return PlainTextResponse(res)
 
 def obj(request):
@@ -74,13 +72,14 @@ def fil(request):
     return PlainTextResponse(res)
 
 
-# RESERVED ROUTES: tree, object, file
+# RESERVED ROUTES: object, file
 routes = [
-    Route('/tree', tree),
+    Route('/object', directory),
     Route('/object/{object}', obj),
     Route('/object/{object}/{start:int}/-', obj),
     Route('/object/{object}/{start:int}/-/{end:int}', obj),
     Route('/object/{object}/-/{end:int}', obj),
+    Route('/file', directory),
     Route('/file/{path_to_file:path}', fil),
     Mount('/', app=StaticFiles(directory=SRV_HOME, html=True)),
 ]
