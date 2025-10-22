@@ -49,20 +49,39 @@ def obj(request):
     """
     repo = Repository(REPO_HOME)
     oid = request.path_params['object']
-    
+
     start = request.path_params.get('start', 0)
     end = request.path_params.get('end', -1)
-    
+
     res = repo.get(oid).data
     return PlainTextResponse(res[start:end])
 
-# RESERVED ROUTES: tree, object
+def fil(request):
+    """
+    Convert file properties to object form.
+    """
+    repo = Repository(REPO_HOME)
+    p = request.path_params['path_to_file']
+    versions = {}
+    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
+        for e in commit.tree:
+            if e.name in versions:
+                versions[e.name] = versions[e.name] + [str(e.id)]
+            else:
+                versions[e.name] = [str(e.id)]
+
+    res = "\n".join(set(versions.get(p,[]))).rstrip()
+    return PlainTextResponse(res)
+
+
+# RESERVED ROUTES: tree, object, file
 routes = [
     Route('/tree', tree),
     Route('/object/{object}', obj),
     Route('/object/{object}/{start:int}/-', obj),
     Route('/object/{object}/{start:int}/-/{end:int}', obj),
     Route('/object/{object}/-/{end:int}', obj),
+    Route('/file/{path_to_file:path}', fil),
     Mount('/', app=StaticFiles(directory=SRV_HOME, html=True)),
 ]
 
