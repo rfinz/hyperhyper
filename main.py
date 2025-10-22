@@ -32,9 +32,15 @@ def tree(request):
     """
     repo = Repository(REPO_HOME)
     res = ""
-    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME):
+    prev = {}
+    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
         res += "{} | {} | {}\n".format(datetime.datetime.fromtimestamp(commit.commit_time), commit.id, commit.message.rstrip())
-
+        for e in commit.tree:
+            if e.id in prev:
+                pass
+            else:
+                prev[e.id] = e.name
+                res += f"  {e.name} -> {e.id}\n"
     return PlainTextResponse(res)
 
 def obj(request):

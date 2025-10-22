@@ -39,4 +39,5 @@ uvicorn main:app #run the asgi application
 - [ ] finish demo SPA
 - [ ] package python application for distribution
 - [ ] re-write README to reflect the installation differences between a git based development install and using the package as a requirement for your own application
+- [ ] think of more to do
 
