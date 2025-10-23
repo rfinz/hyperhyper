@@ -33,17 +33,24 @@ def directory(request):
     repo = Repository(REPO_HOME)
     res = "object,time,name,length\n"
     prev = {}
-    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
-        for e in commit.tree:
+
+    def construct(tree, name=""):
+        level = ""
+        for e in tree:
             if e.id in prev:
                 pass
             else:
                 if e.type == ObjectType.BLOB:
                     prev[e.id] = e.name
-                    res += f"{e.id},{commit.commit_time},{e.name},{e.size - 1}\n"
-                elif e.type ==ObjectType.TREE:
-                    pass # TO DO: add recursion into directories
-                    
+                    p = f'{name}/{e.name}'[1:]
+                    level += f'{e.id},{commit.commit_time},{p},{e.size - 1}\n'
+                if e.type == ObjectType.TREE:
+                    level += construct(e, name=f'{name}/{e.name}')
+        return level
+
+    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
+        res += construct(commit.tree)
+
     return PlainTextResponse(res)
 
 def obj(request):
