@@ -66,33 +66,50 @@ def obj(request):
     res = repo.get(oid).data
     return PlainTextResponse(res[start:end])
 
-def fil(request):
+def vers(request):
     """
     Convert file properties to object form.
     """
     repo = Repository(REPO_HOME)
     p = request.path_params['path_to_file']
+    prev = {}
     versions = {}
-    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
-        for e in commit.tree:
-            if e.name in versions:
-                versions[e.name] = versions[e.name] + [str(e.id)]
+    def construct(tree, name=""):
+        names = []
+        for e in tree:
+            if e.id in prev:
+                pass
             else:
-                versions[e.name] = [str(e.id)]
-
-    res = "\n".join(set(versions.get(p,[]))).rstrip()
+                if e.type == ObjectType.BLOB:
+                    prev[e.id] = e.name
+                    path = f'{name}/{e.name}'[1:]
+                    names += [(f'{path}', e.id)]
+                if e.type == ObjectType.TREE:
+                    names += construct(e, name=f'{name}/{e.name}')
+        return names
+    
+    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
+        fil = construct(commit.tree)
+        for v in fil:
+            if v[0] in versions:
+                versions[v[0]] = versions[v[0]] + [str(v[1])]
+            else:
+                versions[v[0]] = [str(v[1])]
+    res = "\n".join(versions.get(p,[])).rstrip()
     return PlainTextResponse(res)
 
 
-# RESERVED ROUTES: object, file
+# RESERVED ROUTES: object, version
 routes = [
     Route('/object', directory),
+    Route('/object/', directory), # kindness is virtue
     Route('/object/{object}', obj),
     Route('/object/{object}/{start:int}/-', obj),
     Route('/object/{object}/{start:int}/-/{end:int}', obj),
     Route('/object/{object}/-/{end:int}', obj),
-    Route('/file', directory),
-    Route('/file/{path_to_file:path}', fil),
+    Route('/version', directory),
+    Route('/version/', directory), # kindness is virtue
+    Route('/version/{path_to_file:path}', vers),
     Mount('/', app=StaticFiles(directory=SRV_HOME, html=True)),
 ]
 
