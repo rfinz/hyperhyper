@@ -99,7 +99,7 @@ def vers(request):
     return PlainTextResponse(res)
 
 
-# RESERVED ROUTES: object, version
+# RESERVED ROUTES: object, versions
 routes = [
     Route('/object', directory),
     Route('/object/', directory), # kindness is virtue
@@ -107,9 +107,9 @@ routes = [
     Route('/object/{object}/{start:int}/-', obj),
     Route('/object/{object}/{start:int}/-/{end:int}', obj),
     Route('/object/{object}/-/{end:int}', obj),
-    Route('/version', directory),
-    Route('/version/', directory), # kindness is virtue
-    Route('/version/{path_to_file:path}', vers),
+    Route('/versions', directory),
+    Route('/versions/', directory), # kindness is virtue
+    Route('/versions/{path_to_file:path}', vers),
     Mount('/', app=StaticFiles(directory=SRV_HOME, html=True)),
 ]
 
