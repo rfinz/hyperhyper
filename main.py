@@ -26,16 +26,15 @@ async def lifespan(app):
     yield
     print('Shutdown')
 
-def directory(request):
+def cvd(repo):
     """
-    Site tree
+    Construct Version Directory (CVD)
     """
-    repo = Repository(REPO_HOME)
-    res = "object,time,name,length\n"
     prev = {}
+    vd = {}
 
-    def construct(tree, name=""):
-        level = ""
+    def construct(tree, commit, name=""):
+        names = []
         for e in tree:
             if e.id in prev:
                 pass
@@ -43,13 +42,36 @@ def directory(request):
                 if e.type == ObjectType.BLOB:
                     prev[e.id] = e.name
                     p = f'{name}/{e.name}'[1:]
-                    level += f'{e.id},{commit.commit_time},{p},{e.size - 1}\n'
+                    names += [
+                        {"id": e.id,
+                         "time": commit.commit_time,
+                         "name": p,
+                         "length": e.size - 1}
+                    ]
                 if e.type == ObjectType.TREE:
-                    level += construct(e, name=f'{name}/{e.name}')
-        return level
+                    construct(e, commit, name=f'{name}/{e.name}')
+        return names
 
-    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
-        res += construct(commit.tree)
+    for commit in repo.walk(
+            repo.head.target,
+            SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE
+    ):
+        vd[commit.id] = construct(commit.tree, commit)
+
+    return vd
+
+def directory(request):
+    """
+    Site tree
+    """
+    repo = Repository(REPO_HOME)
+    res = "object,time,name,length\n"
+
+    vd = cvd(repo)
+
+    for c in reversed(vd):
+        for t in vd[c]:
+            res += f'{t["id"]},{t["time"]},{t["name"]},{t["length"]}\n'
 
     return PlainTextResponse(res)
 
@@ -72,29 +94,17 @@ def vers(request):
     """
     repo = Repository(REPO_HOME)
     p = request.path_params['path_to_file']
-    prev = {}
     versions = {}
-    def construct(tree, name=""):
-        names = []
-        for e in tree:
-            if e.id in prev:
-                pass
+
+    vd = cvd(repo)
+
+    for c in reversed(vd):
+        for t in vd[c]:
+            if t["name"] in versions:
+                versions[t["name"]] = versions[t["name"]] + [str(t["id"])]
             else:
-                if e.type == ObjectType.BLOB:
-                    prev[e.id] = e.name
-                    path = f'{name}/{e.name}'[1:]
-                    names += [(f'{path}', e.id)]
-                if e.type == ObjectType.TREE:
-                    names += construct(e, name=f'{name}/{e.name}')
-        return names
-    
-    for commit in repo.walk(repo.head.target, SortMode.TOPOLOGICAL | SortMode.TIME | SortMode.REVERSE):
-        fil = construct(commit.tree)
-        for v in fil:
-            if v[0] in versions:
-                versions[v[0]] = versions[v[0]] + [str(v[1])]
-            else:
-                versions[v[0]] = [str(v[1])]
+                versions[t["name"]] = [str(t["id"])]
+
     res = "\n".join(versions.get(p,[])).rstrip()
     return PlainTextResponse(res)
 
