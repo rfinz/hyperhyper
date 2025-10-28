@@ -26,12 +26,16 @@ async def lifespan(app):
     yield
     print('Shutdown')
 
-def cvd(repo):
+def cvd(repo, request):
     """
     Construct Version Directory (CVD)
     """
     prev = {}
     vd = {}
+
+    if str(repo.head.target) in request.app.state.vd:
+        # premature optimization type shi -- caching mechanism
+        return request.app.state.vd[str(repo.head.target)]
 
     def construct(tree, commit, name=""):
         names = []
@@ -58,6 +62,7 @@ def cvd(repo):
     ):
         vd[commit.id] = construct(commit.tree, commit)
 
+    request.app.state.vd[str(repo.head.target)] = vd
     return vd
 
 def directory(request):
@@ -67,7 +72,7 @@ def directory(request):
     repo = Repository(REPO_HOME)
     res = "object,time,name,length\n"
 
-    vd = cvd(repo)
+    vd = cvd(repo, request)
 
     for c in reversed(vd):
         for t in vd[c]:
@@ -96,7 +101,7 @@ def vers(request):
     p = request.path_params['path_to_file']
     versions = {}
 
-    vd = cvd(repo)
+    vd = cvd(repo, request)
 
     for c in reversed(vd):
         for t in vd[c]:
@@ -124,3 +129,4 @@ routes = [
 ]
 
 app = Starlette(debug=True, routes=routes, lifespan=lifespan)
+app.state.vd = {}
