@@ -53,7 +53,8 @@ def cvd(repo, request):
                          "length": e.size - 1}
                     ]
                 if e.type == ObjectType.TREE:
-                    construct(e, commit, name=f'{name}/{e.name}')
+                    names += construct(e, commit, name=f'{name}/{e.name}')
+
         return names
 
     for commit in repo.walk(
