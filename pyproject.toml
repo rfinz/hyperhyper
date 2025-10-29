@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "xu60"
+requires-python = ">=3.8"
+authors = [
+  {name = "Raymond Finzel", email = "github@rfinz.mozmail.com"},
+]

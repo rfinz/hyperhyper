@@ -17,6 +17,8 @@ for re-usable content, (mostly) guaranteed not to rot as a website grows, change
 2. **xu60** should contain additional functionality for querying document version histories and displaying document metadata such as original paths, edit dates, etc.
 3. besides documents, content-addressable document histories, and document/history metadata, **xu60** should remain agnostic to use-case and ship as few features as is plausible
 4. **xu60** should virtually never re-code the core algorithms that make its features possible. high-performance versions of virtually every element already exist--**xu60** is a thin application layer built around known technologies. plus I'm dumb
+5. the "known technologies" that **xu60** relies on should (wherever possible) already be infrastructurally important to the web and unlikely to disappear or be deprecated with any rapidity
+6. **xu60** should be easy to run in a number of configurations to serve a number of applications--hypermedia-ing, mirroring, addressing, serving, distributing, archiving, auditing, etc.
 
 ## demo and installation
 
